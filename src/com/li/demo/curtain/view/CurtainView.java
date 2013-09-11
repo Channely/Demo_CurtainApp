@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.BounceInterpolator;
-import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -26,6 +25,8 @@ public class CurtainView extends RelativeLayout implements GestureDetector.OnGes
     private static final float CURTAIN_OPEN_HEIGHT = 110f;
     private ImageView imageView;
     private GestureDetectorCompat gestureDetectorCompat;
+    private AnimatorSet curtainBounceAnimatorSet;
+    private AnimatorSet curtainScaleAnimationSet;
     private AnimatorSet curtainAnimatorSet;
 
     public CurtainView(Context context) {
@@ -43,6 +44,10 @@ public class CurtainView extends RelativeLayout implements GestureDetector.OnGes
         init();
     }
 
+    public void breeze() {
+        curtainAnimatorSet.start();
+    }
+
     private void init() {
         addImage();
         initListener();
@@ -50,13 +55,24 @@ public class CurtainView extends RelativeLayout implements GestureDetector.OnGes
     }
 
     private void initAnimation() {
+        curtainBounceAnimatorSet = new AnimatorSet();
+        curtainScaleAnimationSet = new AnimatorSet();
         curtainAnimatorSet = new AnimatorSet();
+
+        ObjectAnimator curtainScaleXAnimator = ObjectAnimator.ofFloat(this, "scaleX", 1.06f, 1.0f).setDuration(1000);
+        ObjectAnimator curtainScaleYAnimator = ObjectAnimator.ofFloat(this, "scaleY", 1.04f, 1.0f).setDuration(1000);
+        setPivotY(200);
+        setPivotX(250);
+        curtainScaleAnimationSet.play(curtainScaleXAnimator).with(curtainScaleYAnimator);
+
         ObjectAnimator curtainOpenAnimator = ObjectAnimator.ofFloat(this, "y", 0, -CURTAIN_OPEN_HEIGHT).setDuration(200);
         curtainOpenAnimator.setInterpolator(new AccelerateInterpolator());
         ObjectAnimator curtainBounceAnimation = ObjectAnimator.ofFloat(this, "y", -CURTAIN_OPEN_HEIGHT, 0).setDuration(1000);
         curtainBounceAnimation.setInterpolator(new BounceInterpolator());
 
-        curtainAnimatorSet.playSequentially(curtainOpenAnimator, curtainBounceAnimation);
+        curtainBounceAnimatorSet.playSequentially(curtainOpenAnimator, curtainBounceAnimation);
+
+        curtainAnimatorSet.play(curtainBounceAnimatorSet).after(curtainScaleAnimationSet);
     }
 
     private void initListener() {
@@ -79,8 +95,8 @@ public class CurtainView extends RelativeLayout implements GestureDetector.OnGes
     }
 
     private void bounceCurtain() {
-        if (curtainAnimatorSet.isStarted()) return;
-        curtainAnimatorSet.start();
+        if (curtainAnimatorSet.isStarted() || curtainBounceAnimatorSet.isStarted()) return;
+        curtainBounceAnimatorSet.start();
     }
 
     @Override
